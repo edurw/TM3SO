@@ -72,14 +72,14 @@ int wipe(FILE *fp, struct fat_dir *dir, struct fat_bpb *bpb){
 }
 
 void mv(FILE *fp, char *filename, struct fat_bpb *bpb){
-    ;; /* TODO */
+    ;;
 }
 
 void rm(FILE *fp, char *filename, struct fat_bpb *bpb){
-    ;; /* TODO */
+    ;;
 }
 
 void cp(FILE *fp, char *filename, struct fat_bpb *bpb){
-    ;; /* TODO */
+    ;;
 }
 
