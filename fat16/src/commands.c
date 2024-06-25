@@ -71,70 +71,8 @@ int wipe(FILE *fp, struct fat_dir *dir, struct fat_bpb *bpb){
     return 0;
 }
 
-void print_dir_entries(struct fat_dir *dirs, int count) {
-    for (int i = 0; i < count; i++) {
-        printf("Entry %d: %.11s\n", i, dirs[i].name);
-    }
-}
-
-void mv(FILE *fp, char *src_filename, char *dest_filename, struct fat_bpb *bpb) {
-    // Abre o arquivo de origem
-    FILE *src_fp = fopen(src_filename, "rb");
-
-    // Obtém o tamanho do arquivo de origem
-    fseek(src_fp, 0, SEEK_END);
-    long file_size = ftell(src_fp);
-    rewind(src_fp);
-
-    // Aloca um buffer para ler o arquivo
-    char *buffer = malloc(file_size);
-
-     // Lê o arquivo de origem para o buffer
-    fread(buffer, 1, file_size, src_fp);
-    fclose(src_fp);
-
-    // Carrega as entradas de diretório da imagem FAT16
-    struct fat_dir *dirs = ls(fp, bpb);
-    if (!dirs) {
-        free(buffer);
-        fprintf(stderr, "Error listing directories\n");
-        return;
-    }
-
-    struct fat_dir *free_dir = NULL;
-    for (int i = 0; i < bpb->possible_rentries; i++) {
-        if (dirs[i].name[0] == 0x00 || dirs[i].name[0] == 0xE5) {
-            free_dir = &dirs[i];
-            break;
-        }
-    }
-
-    memset(free_dir, 0, sizeof(struct fat_dir));
-    char *new_name = padding(dest_filename);
-    if (!new_name) {
-        free(buffer);
-        free(dirs);
-        fprintf(stderr, "Error allocating memory for new file name\n");
-        return;
-    }
-
-    strcpy((char *)free_dir->name, new_name);
-    free(new_name);
-    free_dir->attr = 0; // Set appropriate attributes
-    free_dir->starting_cluster = 2; // Set appropriate starting cluster (for simplicity, using cluster 2)
-    free_dir->file_size = file_size;
-
-    // Escreve a nova entrada de diretório na imagem FAT16
-    fseek(fp, bpb_froot_addr(bpb) + (free_dir - dirs) * sizeof(struct fat_dir), SEEK_SET);
-    fwrite(free_dir, 1, sizeof(struct fat_dir), fp);
-
-    // Escreve os dados do arquivo na imagem FAT16
-    fseek(fp, bpb_fdata_addr(bpb) + (free_dir->starting_cluster - 2) * bpb->bytes_p_sect * bpb->sector_p_clust, SEEK_SET);
-    fwrite(buffer, 1, file_size, fp);
-
-    // Limpeza
-    free(buffer);
-    free(dirs);
+void mv(FILE *fp, char *src, char *dest, struct fat_bpb *bpb){
+    ;;
 }
 
 
