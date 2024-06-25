@@ -71,24 +71,44 @@ int wipe(FILE *fp, struct fat_dir *dir, struct fat_bpb *bpb){
     return 0;
 }
 
-void mv(FILE *fp, char *src, char *dest, struct fat_bpb *bpb){
-    // Copiar o arquivo para a imagem FAT16
-    cp(fp, src, dest, bpb);
+void mv(FILE *fp, char *source_filename, char *dest_filename, struct fat_bpb *bpb) {
+    // Listar todos os diretórios
+    struct fat_dir *dirs = ls(fp, bpb);
+    struct fat_dir file_to_move = find(dirs, source_filename, bpb);
+
+    // Se o arquivo não for encontrado, retornar um erro
+    if (file_to_move.name[0] == 0) {
+        fprintf(stderr, "File %s not found.\n", source_filename);
+        free(dirs);
+        return;
+    }
+
+    // Copiar o arquivo para o novo nome
+    struct fat_dir new_file = file_to_move;
+    strncpy(new_file.name, dest_filename, 11);  // Atualizar o nome do arquivo
+
+    // Calcular o offset do diretório raiz
+    int dir_offset = bpb_froot_addr(bpb);
+    fseek(fp, dir_offset, SEEK_SET);
+
+    // Escrever a nova entrada do arquivo
+    fwrite(&new_file, sizeof(struct fat_dir), 1, fp);
 
     // Remover o arquivo original
-    if (remove(src) != 0) {
-        fprintf(stderr, "Erro ao remover arquivo original: %s\n", src);
-    }
+    rm(fp, source_filename, bpb);
+
+    // Liberar a memória alocada
+    free(dirs);
 }
 
-void rm(FILE *fp, char *src, struct fat_bpb *bpb){
+void rm(FILE *fp, char *filename, struct fat_bpb *bpb) {
     // List all directories
     struct fat_dir *dirs = ls(fp, bpb);
-    struct fat_dir file_to_remove = find(dirs, src, bpb);
+    struct fat_dir file_to_remove = find(dirs, filename, bpb);
 
     // If the file was not found, return an error
     if (file_to_remove.name[0] == 0) {
-        fprintf(stderr, "File %s not found.\n", src);
+        fprintf(stderr, "File %s not found.\n", filename);
         free(dirs);
         return;
     }
@@ -126,6 +146,7 @@ void rm(FILE *fp, char *src, struct fat_bpb *bpb){
     // Free allocated memory
     free(dirs);
 }
+
 
 void cp(FILE *fp, char *src, char *dest, struct fat_bpb *bpb){
     // Encontrar o arquivo no diretório raiz
