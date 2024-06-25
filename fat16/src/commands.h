@@ -13,13 +13,13 @@ int write_dir (FILE *, char *, struct fat_dir *);
 int write_data(FILE *, char *, struct fat_dir *, struct fat_bpb *);
 
 /* move file from source to destination */
-void mv(FILE *, char *, struct fat_bpb *);
+void mv(FILE *, char *, char *, struct fat_bpb *);
 
 /* delete the file from the fat directory */
 void rm(FILE *, char *, struct fat_bpb *);
 
 /* copy the file to the fat directory */
-void cp(FILE *fp, char *filename, struct fat_bpb *bpb);
+void cp(FILE *, char *, char *, struct fat_bpb *);
 
 /* helper function: find specific filename in fat_dir */
 struct fat_dir find(struct fat_dir *, char *, struct fat_bpb *);

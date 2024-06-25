@@ -71,15 +71,94 @@ int wipe(FILE *fp, struct fat_dir *dir, struct fat_bpb *bpb){
     return 0;
 }
 
-void mv(FILE *fp, char *filename, struct fat_bpb *bpb){
-    ;;
+void mv(FILE *fp, char *src, char *dest, struct fat_bpb *bpb){
+    // Copiar o arquivo para a imagem FAT16
+    cp(fp, src, dest, bpb);
+
+    // Remover o arquivo original
+    if (remove(src) != 0) {
+        fprintf(stderr, "Erro ao remover arquivo original: %s\n", src);
+    }
 }
 
-void rm(FILE *fp, char *filename, struct fat_bpb *bpb){
-    ;;
+void rm(FILE *fp, char *src, struct fat_bpb *bpb){
+    // List all directories
+    struct fat_dir *dirs = ls(fp, bpb);
+    struct fat_dir file_to_remove = find(dirs, src, bpb);
+
+    // If the file was not found, return an error
+    if (file_to_remove.name[0] == 0) {
+        fprintf(stderr, "File %s not found.\n", src);
+        free(dirs);
+        return;
+    }
+
+    // Mark the directory entry as free
+    file_to_remove.name[0] = DIR_FREE_ENTRY;
+
+    // Calculate the offset of the directory entry
+    int dir_offset = bpb_froot_addr(bpb) + (file_to_remove.starting_cluster - 2) * 32;
+
+    // Seek to the directory entry and write the updated entry
+    fseek(fp, dir_offset, SEEK_SET);
+    fwrite(&file_to_remove, sizeof(struct fat_dir), 1, fp);
+
+    // Free the clusters in the FAT
+    uint16_t cluster = file_to_remove.starting_cluster;
+    while (cluster < 0xFFF8) {
+        // Calculate the offset in the FAT
+        uint32_t fat_offset = bpb_faddress(bpb) + cluster * 2;
+
+        // Read the next cluster in the chain
+        uint16_t next_cluster;
+        fseek(fp, fat_offset, SEEK_SET);
+        fread(&next_cluster, sizeof(uint16_t), 1, fp);
+
+        // Mark the current cluster as free
+        fseek(fp, fat_offset, SEEK_SET);
+        uint16_t free_cluster = 0x0000;
+        fwrite(&free_cluster, sizeof(uint16_t), 1, fp);
+
+        // Move to the next cluster
+        cluster = next_cluster;
+    }
+
+    // Free allocated memory
+    free(dirs);
 }
 
-void cp(FILE *fp, char *filename, struct fat_bpb *bpb){
-    ;;
+void cp(FILE *fp, char *src, char *dest, struct fat_bpb *bpb){
+    // Encontrar o arquivo no diretório raiz
+    struct fat_dir *dirs = ls(fp, bpb);
+    struct fat_dir file = find(dirs, src, bpb);
+
+    if (file.name[0] == 0) {
+        fprintf(stderr, "Arquivo não encontrado: %s\n", src);
+        return;
+    }
+
+    // Abrir o arquivo de destino para escrita
+    FILE *localf = fopen(dest, "wb");
+    if (!localf) {
+        fprintf(stderr, "Erro ao abrir arquivo de destino: %s\n", dest);
+        return;
+    }
+
+    // Calcular o endereço inicial do cluster de dados
+    uint32_t data_addr = bpb_fdata_addr(bpb) + (file.starting_cluster - 2) * bpb->bytes_p_sect * bpb->sector_p_clust;
+    fseek(fp, data_addr, SEEK_SET);
+
+    // Ler e copiar o conteúdo do arquivo
+    uint8_t buffer[512];
+    uint32_t bytes_left = file.file_size;
+    while (bytes_left > 0) {
+        size_t bytes_to_read = (bytes_left > sizeof(buffer)) ? sizeof(buffer) : bytes_left;
+        fread(buffer, 1, bytes_to_read, fp);
+        fwrite(buffer, 1, bytes_to_read, localf);
+        bytes_left -= bytes_to_read;
+    }
+
+    fclose(localf);
+    free(dirs);
 }
 
