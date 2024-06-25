@@ -71,105 +71,93 @@ int wipe(FILE *fp, struct fat_dir *dir, struct fat_bpb *bpb){
     return 0;
 }
 
-void mv(FILE *fp, char *source_filename, char *dest_filename, struct fat_bpb *bpb) {
-    // Listar todos os diretórios
-    struct fat_dir *dirs = ls(fp, bpb);
-    struct fat_dir file_to_move = find(dirs, source_filename, bpb);
+int find_dir(struct fat_dir *dirs, char *src, struct fat_bpb *bpb){
+    if (find(dirs, src, bpb).name[0] == 0)
+        return 0;
+    return 1;
+}
 
-    // Se o arquivo não for encontrado, retornar um erro
-    if (file_to_move.name[0] == 0) {
-        fprintf(stderr, "File %s not found.\n", source_filename);
-        free(dirs);
-        return;
+void mv(FILE *fp, char *src, char *dest, struct fat_bpb *bpb) {
+    // Listar os arquivos no diretório raiz
+    struct fat_dir *dirs = ls(fp, bpb);
+    struct fat_dir file = find(dirs, src, bpb);
+
+    // Copiar o arquivo para o novo local
+    struct fat_dir new_file = file;
+    strncpy((char *)new_file.name, padding(dest), 11);
+
+    // Encontrar um slot vazio no diretório raiz para o novo arquivo
+    int i;
+    for (i = 0; i < bpb->possible_rentries; i++) {
+        if (dirs[i].name[0] == 0 || dirs[i].name[0] == DIR_FREE_ENTRY) {
+            uint32_t new_dir_addr = bpb_froot_addr(bpb) + i * sizeof(struct fat_dir);
+            fseek(fp, new_dir_addr, SEEK_SET);
+            fwrite(&new_file, sizeof(struct fat_dir), 1, fp);
+            break;
+        }
     }
 
-    // Copiar o arquivo para o novo nome
-    struct fat_dir new_file = file_to_move;
-    strncpy(new_file.name, dest_filename, 11);  // Atualizar o nome do arquivo
+    // Limpar a entrada antiga do diretório
+    file.name[0] = DIR_FREE_ENTRY;
+    uint32_t dir_addr = bpb_froot_addr(bpb) + (&file - dirs) * sizeof(struct fat_dir);
+    fseek(fp, dir_addr, SEEK_SET);
+    fwrite(&file, sizeof(struct fat_dir), 1, fp);
 
-    // Calcular o offset do diretório raiz
-    int dir_offset = bpb_froot_addr(bpb);
-    fseek(fp, dir_offset, SEEK_SET);
-
-    // Escrever a nova entrada do arquivo
-    fwrite(&new_file, sizeof(struct fat_dir), 1, fp);
-
-    // Remover o arquivo original
-    rm(fp, source_filename, bpb);
-
-    // Liberar a memória alocada
     free(dirs);
 }
 
-void rm(FILE *fp, char *filename, struct fat_bpb *bpb) {
-    // List all directories
-    struct fat_dir *dirs = ls(fp, bpb);
-    struct fat_dir file_to_remove = find(dirs, filename, bpb);
-
-    // If the file was not found, return an error
-    if (file_to_remove.name[0] == 0) {
-        fprintf(stderr, "File %s not found.\n", filename);
-        free(dirs);
-        return;
-    }
-
-    // Mark the directory entry as free
-    file_to_remove.name[0] = DIR_FREE_ENTRY;
-
-    // Calculate the offset of the directory entry
-    int dir_offset = bpb_froot_addr(bpb) + (file_to_remove.starting_cluster - 2) * 32;
-
-    // Seek to the directory entry and write the updated entry
-    fseek(fp, dir_offset, SEEK_SET);
-    fwrite(&file_to_remove, sizeof(struct fat_dir), 1, fp);
-
-    // Free the clusters in the FAT
-    uint16_t cluster = file_to_remove.starting_cluster;
-    while (cluster < 0xFFF8) {
-        // Calculate the offset in the FAT
-        uint32_t fat_offset = bpb_faddress(bpb) + cluster * 2;
-
-        // Read the next cluster in the chain
-        uint16_t next_cluster;
-        fseek(fp, fat_offset, SEEK_SET);
-        fread(&next_cluster, sizeof(uint16_t), 1, fp);
-
-        // Mark the current cluster as free
-        fseek(fp, fat_offset, SEEK_SET);
-        uint16_t free_cluster = 0x0000;
-        fwrite(&free_cluster, sizeof(uint16_t), 1, fp);
-
-        // Move to the next cluster
-        cluster = next_cluster;
-    }
-
-    // Free allocated memory
-    free(dirs);
-}
-
-
-void cp(FILE *fp, char *src, char *dest, struct fat_bpb *bpb){
+void rm(FILE *fp, char *src, struct fat_bpb *bpb) {
     // Encontrar o arquivo no diretório raiz
     struct fat_dir *dirs = ls(fp, bpb);
     struct fat_dir file = find(dirs, src, bpb);
 
-    if (file.name[0] == 0) {
-        fprintf(stderr, "Arquivo não encontrado: %s\n", src);
-        return;
+    // Marca a entrada do diretório como livre
+    file.name[0] = DIR_FREE_ENTRY;
+
+    // Calcula o offset da entrada do diretório
+    int dir_offset = bpb_froot_addr(bpb) + (file.starting_cluster - 2) * 32;
+
+    // Procura a entrada do diretório e escreve a entrada atualizada
+    fseek(fp, dir_offset, SEEK_SET);
+    fwrite(&file, sizeof(struct fat_dir), 1, fp);
+
+    // Libera os clusters no FAT
+    uint16_t cluster = file.starting_cluster;
+    while (cluster < 0xFFF8) {
+        // Calcula o offset no FAT
+        uint32_t fat_offset = bpb_faddress(bpb) + cluster * 2;
+
+        // Lê o próximo cluster na sequência
+        uint16_t next_cluster;
+        fseek(fp, fat_offset, SEEK_SET);
+        fread(&next_cluster, sizeof(uint16_t), 1, fp);
+
+        // Marca o cluster atual como livre
+        fseek(fp, fat_offset, SEEK_SET);
+        uint16_t free_cluster = 0x0000;
+        fwrite(&free_cluster, sizeof(uint16_t), 1, fp);
+
+        // Troca para o próximo cluster
+        cluster = next_cluster;
     }
 
-    // Abrir o arquivo de destino para escrita
+    free(dirs);
+}
+
+
+void cp(FILE *fp, char *src, const char *dest, struct fat_bpb *bpb){
+    // Encontra o arquivo no diretório raiz
+    struct fat_dir *dirs = ls(fp, bpb);
+    struct fat_dir file = find(dirs, src, bpb);
+
+    // Abre o arquivo de destino para escrita
     FILE *localf = fopen(dest, "wb");
-    if (!localf) {
-        fprintf(stderr, "Erro ao abrir arquivo de destino: %s\n", dest);
-        return;
-    }
 
-    // Calcular o endereço inicial do cluster de dados
+    // Calcula o endereço inicial do cluster de dados
     uint32_t data_addr = bpb_fdata_addr(bpb) + (file.starting_cluster - 2) * bpb->bytes_p_sect * bpb->sector_p_clust;
     fseek(fp, data_addr, SEEK_SET);
 
-    // Ler e copiar o conteúdo do arquivo
+    // Lê e copiar o conteúdo do arquivo
     uint8_t buffer[512];
     uint32_t bytes_left = file.file_size;
     while (bytes_left > 0) {

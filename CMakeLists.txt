@@ -12,7 +12,4 @@ add_executable(TM3SO fat16/src/main.c
         fat16/src/output.c
         fat16/src/support.h
         fat16/src/support.c
-        fat16/src/copiar.c
-        fat16/src/mover.c
-        fat16/src/remover.c
 )

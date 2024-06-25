@@ -79,24 +79,6 @@ build CMakeFiles/TM3SO.dir/fat16/src/support.c.obj: C_COMPILER__TM3SO_unscanned_
   OBJECT_DIR = CMakeFiles\TM3SO.dir
   OBJECT_FILE_DIR = CMakeFiles\TM3SO.dir\fat16\src
 
-build CMakeFiles/TM3SO.dir/fat16/src/copiar.c.obj: C_COMPILER__TM3SO_unscanned_Debug C$:/Users/eduwe/CLionProjects/TM3SO/fat16/src/copiar.c || cmake_object_order_depends_target_TM3SO
-  DEP_FILE = CMakeFiles\TM3SO.dir\fat16\src\copiar.c.obj.d
-  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles\TM3SO.dir
-  OBJECT_FILE_DIR = CMakeFiles\TM3SO.dir\fat16\src
-
-build CMakeFiles/TM3SO.dir/fat16/src/mover.c.obj: C_COMPILER__TM3SO_unscanned_Debug C$:/Users/eduwe/CLionProjects/TM3SO/fat16/src/mover.c || cmake_object_order_depends_target_TM3SO
-  DEP_FILE = CMakeFiles\TM3SO.dir\fat16\src\mover.c.obj.d
-  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles\TM3SO.dir
-  OBJECT_FILE_DIR = CMakeFiles\TM3SO.dir\fat16\src
-
-build CMakeFiles/TM3SO.dir/fat16/src/remover.c.obj: C_COMPILER__TM3SO_unscanned_Debug C$:/Users/eduwe/CLionProjects/TM3SO/fat16/src/remover.c || cmake_object_order_depends_target_TM3SO
-  DEP_FILE = CMakeFiles\TM3SO.dir\fat16\src\remover.c.obj.d
-  FLAGS = -g -std=gnu11 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles\TM3SO.dir
-  OBJECT_FILE_DIR = CMakeFiles\TM3SO.dir\fat16\src
-
 
 # =============================================================================
 # Link build statements for EXECUTABLE target TM3SO
@@ -105,7 +87,7 @@ build CMakeFiles/TM3SO.dir/fat16/src/remover.c.obj: C_COMPILER__TM3SO_unscanned_
 #############################################
 # Link the executable TM3SO.exe
 
-build TM3SO.exe: C_EXECUTABLE_LINKER__TM3SO_Debug CMakeFiles/TM3SO.dir/fat16/src/main.c.obj CMakeFiles/TM3SO.dir/fat16/src/fat16.c.obj CMakeFiles/TM3SO.dir/fat16/src/commands.c.obj CMakeFiles/TM3SO.dir/fat16/src/output.c.obj CMakeFiles/TM3SO.dir/fat16/src/support.c.obj CMakeFiles/TM3SO.dir/fat16/src/copiar.c.obj CMakeFiles/TM3SO.dir/fat16/src/mover.c.obj CMakeFiles/TM3SO.dir/fat16/src/remover.c.obj
+build TM3SO.exe: C_EXECUTABLE_LINKER__TM3SO_Debug CMakeFiles/TM3SO.dir/fat16/src/main.c.obj CMakeFiles/TM3SO.dir/fat16/src/fat16.c.obj CMakeFiles/TM3SO.dir/fat16/src/commands.c.obj CMakeFiles/TM3SO.dir/fat16/src/output.c.obj CMakeFiles/TM3SO.dir/fat16/src/support.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\TM3SO.dir

@@ -2,6 +2,6 @@
 #define SUPPORT_H
 
 
-char* padding(char *filename);
+char* padding(char *);
 
 #endif
